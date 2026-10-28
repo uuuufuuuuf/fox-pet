@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; style-src 'self'">
+  <title>여우귀 친구</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="pet"></canvas>
+  <div id="ui">
+    <div id="bubble" class="ui hidden"></div>
+    <div id="ask" class="ui hidden"><button data-a="yes">응! 💗</button><button data-a="meh">음…</button></div>
+    <div id="stats" class="ui hidden">
+      <div class="row"><span class="label">Lv.<b id="lv">1</b></span><div class="bar xp"><i id="xp"></i></div></div>
+      <div class="row"><span class="label">🍖 포만감</span><div class="bar food"><i id="food"></i></div></div>
+      <div class="row"><span class="label">💗 기분</span><div class="bar mood"><i id="mood"></i></div></div>
+    </div>
+  </div>
+  <div id="fx"></div>
+  <script src="renderer.js"></script>
+</body>
+</html>
