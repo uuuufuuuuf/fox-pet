@@ -14,6 +14,13 @@ const SAVE = () => path.join(app.getPath('userData'), 'pet.json');
 
 let win = null, tray = null;
 
+// errors go to the terminal and to %APPDATA%ox-peterror.log (the installed app has no terminal)
+function logError(msg) {
+  console.error('[pet] ' + msg);
+  try { fs.appendFileSync(path.join(app.getPath('userData'), 'error.log'), `${new Date().toISOString()} ${msg}
+`); } catch {}
+}
+
 if (!app.requestSingleInstanceLock()) app.quit();
 
 function workArea() {
@@ -41,9 +48,9 @@ function createWindow() {
   win.once('ready-to-show', () => win.showInactive());
   // page errors and warnings go to the terminal running `npm start`
   win.webContents.on('console-message', (_, level, message, line, source) => {
-    if (level >= 2) console.error(`[pet] ${message} (${path.basename(source)}:${line})`);
+    if (level >= 2) logError(`${message} (${path.basename(source)}:${line})`);
   });
-  win.webContents.on('render-process-gone', (_, d) => console.error('[pet] renderer gone:', d.reason));
+  win.webContents.on('render-process-gone', (_, d) => logError('renderer gone: ' + d.reason));
   win.on('closed', () => { win = null; });
 }
 
@@ -97,7 +104,13 @@ app.whenReady().then(() => {
     try { fs.writeFileSync(SAVE(), JSON.stringify(state)); } catch (e) { console.error('save failed', e); }
   });
   ipcMain.on('diary', (_, day) => writeDiary(day));
-  ipcMain.on('move',(_, x, y) => win && win.setPosition(Math.round(x), Math.round(y)));
+  ipcMain.on('move', (_, x, y) => {
+    // a bad position (NaN etc.) must never reach setPosition: it throws and shows an error box
+    if (!win || !Number.isFinite(x) || !Number.isFinite(y)) { if (win) logError(`bad window position ${x} ${y}`); return; }
+    // (Math.round(-0.3) is -0, which setPosition rejects as not an integer: it happens on the monitor
+    // to the left of the primary one, whose x is negative; `|| 0` turns -0 into 0)
+    win.setPosition(Math.round(x) || 0, Math.round(y) || 0);
+  });
   ipcMain.on('mouse-through', (_, on) => win && win.setIgnoreMouseEvents(on, { forward: true }));
   ipcMain.on('menu', (_, st) => {
     lastSettings = st;

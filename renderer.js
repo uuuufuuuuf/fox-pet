@@ -107,6 +107,19 @@ function landOn(y) {
   winX = clamp(winX, lo, hi);
   return groundOf(floorAt(centre(), y));
 }
+// every window move goes through here: a position that isn't a number (it once showed up when
+// crossing monitors) is logged with the state that led to it, and the pet is put back on the
+// primary monitor's taskbar instead
+function moveWin() {
+  if (!Number.isFinite(winX) || !Number.isFinite(winY)) {
+    console.error('[pet] bad position', JSON.stringify({ winX, winY, mode, anim, fallTo, jumpFrom, jumpTo, vy, walkLo, walkHi, targetX, areas }));
+    const home = areas[0];
+    winX = home.x + home.width / 2 - W / 2; winY = groundOf(home);
+    vy = 0; resume = false;
+    if (mode === 'walk' || mode === 'fall' || mode === 'jump') setMode('idle', 3000);
+  }
+  window.pet.move(winX, winY);
+}
 function resumeWalk() {
   resume = false;
   setMode('walk');
@@ -364,7 +377,7 @@ addEventListener('pointermove', e => {
   }
   if (press.dragging) {
     winX = e.screenX - press.ox; winY = e.screenY - press.oy;
-    window.pet.move(winX, winY);
+    moveWin();
   }
 });
 addEventListener('pointerdown', e => {
@@ -380,7 +393,7 @@ addEventListener('pointerup', e => {
     fallTo = landOn(winY);
     splatNext = fallTo - winY > SPLAT_DROP;
     vy = 0; resume = false;
-    if (winY >= fallTo) { winY = fallTo; window.pet.move(winX, winY); setMode('idle', 3000); }
+    if (winY >= fallTo) { winY = fallTo; moveWin(); setMode('idle', 3000); }
     else setMode('fall');
   } else petIt(performance.now());
   save();
@@ -428,13 +441,13 @@ function tick(now) {
         setMode('splat', SPLAT_MS);
       } else { say('휴~', 1500); setMode('idle', 3000); }
     }
-    window.pet.move(winX, winY);
+    moveWin();
   }
   if (mode === 'jump') {
     const t = Math.min(1, (now - jumpStart) / JUMP_MS);
     winY = jumpFrom + (jumpTo - jumpFrom) * t - Math.sin(Math.PI * t) * 60 * S.scale;
     if (t >= 1) { winY = jumpTo; resumeWalk(); }
-    window.pet.move(winX, winY);
+    moveWin();
   }
   hopOff = 0;
   if (mode === 'hop') {
@@ -465,7 +478,7 @@ function tick(now) {
           if (g > winY + 1) { fallTo = g; vy = 0; resume = true; setMode('fall'); }
           else if (g < winY - 1) { jumpFrom = winY; jumpTo = g; jumpStart = now; resume = true; setMode('jump'); }
         }
-        window.pet.move(winX, winY);
+        moveWin();
       }
     }
   }
@@ -508,7 +521,7 @@ function tick(now) {
     winY = landOn(winY);
     resume = false;
     if (mode === 'walk' || mode === 'fall' || mode === 'jump') setMode('idle', 3000);
-    window.pet.move(winX, winY);
+    moveWin();
   });
 
   const saved = await window.pet.load();
@@ -522,7 +535,7 @@ function tick(now) {
   const home = areas[0];
   if (S.x != null) { winX = S.x; winY = landOn(S.y != null ? S.y : groundOf(home)); }
   else { winX = home.x + home.width / 2 - W / 2; winY = groundOf(home); }
-  window.pet.move(winX, winY);
+  moveWin();
 
   if (!saved) say('안녕! 잘 부탁해 🦊', 3500);
   else if (away > 30) say(S.food < 30 ? '보고 싶었어… 배고파 🍖' : '다시 왔구나! 보고 싶었어', 3500);
