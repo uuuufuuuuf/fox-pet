@@ -1,0 +1,30 @@
+# Checks that the app builds from source on every push. The released installer is signed on the
+# maintainer's PC (Certum's cloud certificate needs a phone login for each session), so this
+# workflow only builds an unsigned installer and keeps it as a downloadable artifact.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx electron-builder --win nsis --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-unsigned
+          path: dist/FoxPet-Setup-*.exe

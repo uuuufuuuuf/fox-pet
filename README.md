@@ -26,6 +26,14 @@
 
 [Releases](../../releases)에서 `FoxPet-Setup-*.exe`를 받아 실행하세요.
 
+## 코드 서명 (Code signing policy)
+
+Releases의 설치 파일과 그 안의 프로그램 파일(exe, dll)은 **Certum Open Source Code Signing** 인증서로 서명돼요.
+서명자는 "Open Source Developer"로 표시되고, 이 저장소의 관리자가 공개된 소스에서 직접 빌드해 서명해요.
+설치 파일을 마우스 오른쪽 버튼으로 눌러 속성 → 디지털 서명에서 확인할 수 있어요.
+
+이 저장소의 Actions가 만드는 설치 파일은 빌드 확인용이라 서명이 없어요. 배포용으로는 Releases의 파일만 쓰세요.
+
 ## 직접 빌드하기
 
 Node.js 20 이상이 필요해요.
@@ -33,7 +41,8 @@ Node.js 20 이상이 필요해요.
 ```bash
 npm ci
 npm start          # 실행
-npm run dist       # 설치 파일 만들기 (dist 폴더)
+npm run dist       # 설치 파일 만들기 (dist 폴더, 서명 없음)
+npm run release    # 빌드하고 서명하기 (관리자용, SIGNING.md 참고)
 ```
 
 ## 라이선스
